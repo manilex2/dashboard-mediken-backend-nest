@@ -8,19 +8,19 @@ import { Column, Model, Table } from 'sequelize-typescript';
 })
 export class Broker extends Model {
   @Column({ field: 'dsvccod', primaryKey: true, allowNull: false })
-  codigo: string;
+  codigoBrokerComp: string;
 
   @Column({ field: 'dsvcnom', allowNull: true })
-  nombre: string;
+  nombres: string;
 
   @Column({ field: 'dsvcsta', allowNull: true })
-  nose1: string;
+  statusBroker: string;
 
   @Column({ field: 'dsvcruc', allowNull: true })
   ruc: string;
 
   @Column({ field: 'dsvcrple', allowNull: true })
-  representante: string;
+  representanteLegal: string;
 
   @Column({ field: 'dsvcema', allowNull: true })
   email: string;

@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserDto } from './dto/user/userDTO';
 import { InjectModel } from '@nestjs/sequelize';
-import { MedikenUser, Beneficiario, Broker, Afiliado } from './models';
+import { MedikenUser, Beneficiario, Broker, AfiliadoTitular } from './models';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -13,12 +13,12 @@ export class UsersService {
     private readonly beneficiario: typeof MedikenUser,
     @InjectModel(Broker)
     private readonly broker: typeof Broker,
-    @InjectModel(Afiliado)
-    private readonly afiliado: typeof Afiliado,
+    @InjectModel(AfiliadoTitular)
+    private readonly afiliadoTitular: typeof AfiliadoTitular,
   ) {}
 
   async updatePassword(id: string, data: UserDto): Promise<object> {
-    let user: MedikenUser | Broker | Beneficiario | Afiliado;
+    let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
     try {
       user = await this.medikenUser.findOne({
         where: {
@@ -113,7 +113,7 @@ export class UsersService {
               );
             }
           } else {
-            user = await this.afiliado.findOne({
+            user = await this.afiliadoTitular.findOne({
               where: {
                 usuario: id,
               },
@@ -125,7 +125,7 @@ export class UsersService {
               );
               if (passwordMatch) {
                 const newPass = await this.hashPassword(data.nuevaClave);
-                await this.afiliado.update(
+                await this.afiliadoTitular.update(
                   { clave: newPass.trim() },
                   {
                     where: {
@@ -162,7 +162,7 @@ export class UsersService {
   }
 
   async updateProfileImg(id: string, data: Buffer): Promise<object> {
-    let user: MedikenUser | Broker | Beneficiario | Afiliado;
+    let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
     try {
       user = await this.medikenUser.findOne({
         where: {
@@ -221,13 +221,13 @@ export class UsersService {
               message: 'Imágen actualizada exitosamente',
             };
           } else {
-            user = await this.afiliado.findOne({
+            user = await this.afiliadoTitular.findOne({
               where: {
                 usuario: id,
               },
             });
             if (user) {
-              await this.afiliado.update(
+              await this.afiliadoTitular.update(
                 { img: data },
                 {
                   where: {
@@ -257,7 +257,7 @@ export class UsersService {
   }
 
   async getProfileImg(id: string): Promise<object> {
-    let user: Promise<MedikenUser | Broker | Beneficiario | Afiliado>;
+    let user: Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular>;
     try {
       user = this.medikenUser.findOne({
         where: {
@@ -298,7 +298,7 @@ export class UsersService {
               message: imgBase64,
             };
           } else {
-            user = this.afiliado.findOne({
+            user = this.afiliadoTitular.findOne({
               where: {
                 usuario: id,
               },

@@ -2,12 +2,18 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserDto } from '../users/dto/user/userDTO';
 import { InjectModel } from '@nestjs/sequelize';
-import { Afiliado, Beneficiario, Broker, MedikenUser } from 'src/users/models';
+import {
+  AfiliadoTitular,
+  Beneficiario,
+  Broker,
+  MedikenUser,
+} from 'src/users/models';
 import * as bcrypt from 'bcrypt';
 import { google } from 'googleapis';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { Options } from 'nodemailer/lib/smtp-transport';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class AuthService {
@@ -16,17 +22,17 @@ export class AuthService {
     @InjectModel(MedikenUser)
     private readonly medikenUser: typeof MedikenUser,
     @InjectModel(Beneficiario)
-    private readonly beneficiario: typeof MedikenUser,
+    private readonly beneficiario: typeof Beneficiario,
     @InjectModel(Broker)
     private readonly broker: typeof Broker,
-    @InjectModel(Afiliado)
-    private readonly afiliado: typeof Afiliado,
+    @InjectModel(AfiliadoTitular)
+    private readonly afiliadoTitular: typeof AfiliadoTitular,
     private mailerService: MailerService,
     private configService: ConfigService,
   ) {}
 
   async login(
-    user: Promise<MedikenUser | Beneficiario | Broker>,
+    user: Promise<MedikenUser | Beneficiario | Broker | AfiliadoTitular>,
   ): Promise<object> {
     return {
       token: this.jwtService.sign({
@@ -39,8 +45,8 @@ export class AuthService {
 
   async getUser(
     data: UserDto,
-  ): Promise<MedikenUser | Broker | Beneficiario | Afiliado> {
-    let user: MedikenUser | Broker | Beneficiario | Afiliado;
+  ): Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular> {
+    let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
     try {
       user = await this.medikenUser.findOne({
         where: {
@@ -92,12 +98,12 @@ export class AuthService {
             );
           }
         } else {
-          user = await this.beneficiario.findOne({
+          user = await this.afiliadoTitular.findOne({
             where: {
               usuario: data.usuario,
             },
             attributes: {
-              exclude: ['beveimg'],
+              exclude: ['Afiimg'],
             },
           });
           if (user) {
@@ -106,9 +112,49 @@ export class AuthService {
               user.dataValues.clave.trim(),
             );
             if (passwordMatch) {
-              user.dataValues.usuario = user.dataValues.usuario.trim();
               delete user.dataValues.clave;
-              user.dataValues.tipoUsuario = 'Beneficiario';
+              user.dataValues.tipoUsuario = 'AfiliadoTitular';
+              const contratos = await this.afiliadoTitular.findAll({
+                where: {
+                  usuario: data.usuario,
+                  suspendido: {
+                    [Op.not]: 'S',
+                  },
+                  statusCliente: {
+                    [Op.not]: 'E',
+                  },
+                },
+                attributes: [['ClRgcnt', 'contrato']],
+              });
+              delete user.dataValues.contrato;
+              user.dataValues.contratos = [];
+              for (let i = 0; i < contratos.length; i++) {
+                const contrato = contratos[i];
+                const benef = await this.beneficiario.findAll({
+                  where: {
+                    contrato: contrato.contrato,
+                    suspendido: {
+                      [Op.not]: 'S',
+                    },
+                    statusExcluido: {
+                      [Op.not]: 'E',
+                    },
+                  },
+                  attributes: [
+                    ['beveIde', 'id'],
+                    ['bevenom', 'nombres'],
+                    ['beveape', 'apellidos'],
+                    ['bevecnt', 'contrato'],
+                    ['bevecntsec', 'secuencialContrato'],
+                    ['bevebensec', 'secuencialBeneficiario'],
+                    ['beveimg', 'img'],
+                  ],
+                });
+                user.dataValues.contratos.push({
+                  contrato: contrato.dataValues.contrato,
+                  beneficiarios: benef,
+                });
+              }
               return user;
             } else {
               throw new HttpException(
@@ -117,12 +163,12 @@ export class AuthService {
               );
             }
           } else {
-            user = await this.afiliado.findOne({
+            user = await this.beneficiario.findOne({
               where: {
                 usuario: data.usuario,
               },
               attributes: {
-                exclude: ['Afiimg'],
+                exclude: ['beveimg'],
               },
             });
             if (user) {
@@ -133,7 +179,7 @@ export class AuthService {
               if (passwordMatch) {
                 user.dataValues.usuario = user.dataValues.usuario.trim();
                 delete user.dataValues.clave;
-                user.dataValues.tipoUsuario = 'Afiliado';
+                user.dataValues.tipoUsuario = 'Beneficiario';
                 return user;
               } else {
                 throw new HttpException(

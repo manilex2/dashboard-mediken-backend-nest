@@ -11,46 +11,46 @@ export class Beneficiario extends Model {
   usuario: string;
 
   @Column({ field: 'bevenom', allowNull: false })
-  nombre: string;
+  nombres: string;
 
   @Column({ field: 'beveape', allowNull: false })
-  apellido: string;
+  apellidos: string;
 
   @Column({ field: 'bevecob', allowNull: false })
-  nose1: number;
+  cobertura: number;
 
   @Column({ field: 'bevesalcob', allowNull: false })
-  nose2: number;
+  saldoCobertura: number;
 
   @Column({ field: 'bevesus', allowNull: false })
-  nose3: string;
+  suspendido: string;
 
   @Column({ field: 'beveven', allowNull: false })
-  nose4: string;
+  nose1: string;
 
   @Column({ field: 'beveexc', allowNull: false })
-  nose5: string;
+  statusExcluido: string;
 
   @Column({ field: 'bevedet', allowNull: false })
-  condicion: string;
+  diagnostico: string;
 
   @Column({ field: 'beveusrlog', allowNull: false })
-  nose6: string;
+  usuarioLog: string;
 
   @Column({ field: 'bevefeclog', allowNull: false })
-  nose7: Date;
+  fechaLog: Date;
 
   @Column({ field: 'bevehralog', allowNull: false })
-  nose8: string;
+  horaLog: string;
 
   @Column({ field: 'bevefecinc', allowNull: false })
-  fechaInclu: Date;
+  fechaInclusion: Date;
 
   @Column({ field: 'bevefecnac', allowNull: true })
-  fechaNac: Date;
+  fechaNacimiento: Date;
 
   @Column({ field: 'bevecnt', allowNull: true })
-  numContrato: string;
+  contrato: string;
 
   @Column({ field: 'bevecntsec', allowNull: true })
   secuencialContrato: string;
@@ -59,7 +59,7 @@ export class Beneficiario extends Model {
   secuencialBeneficiario: string;
 
   @Column({ field: 'bevesex', allowNull: true })
-  sexo: string;
+  genero: string;
 
   @Column({ field: 'bevetip', allowNull: true })
   tipo: string;
@@ -71,10 +71,10 @@ export class Beneficiario extends Model {
   email: string;
 
   @Column({ field: 'beveoficod', allowNull: true })
-  codOfic: string;
+  oficina: string;
 
   @Column({ field: 'bevecliid', allowNull: true })
-  clientID: string;
+  cedula: string;
 
   @Column({ field: 'bevenotifchngpass1', allowNull: true })
   notifChangePass1: boolean;

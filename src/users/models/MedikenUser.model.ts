@@ -8,10 +8,10 @@ import { Column, Model, Table } from 'sequelize-typescript';
 })
 export class MedikenUser extends Model {
   @Column({ field: 'Dsusucod', primaryKey: true, allowNull: false })
-  codigo: string;
+  codigoUsuario: string;
 
   @Column({ field: 'Dsusunom', allowNull: true })
-  nombre: string;
+  nombres: string;
 
   @Column({ field: 'DsUsustaac', allowNull: true })
   nose1: string;

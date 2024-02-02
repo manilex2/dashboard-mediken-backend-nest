@@ -7,11 +7,21 @@ import { JwtStrategy } from './strategys/jwt.strategy';
 import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { MedikenUser, Beneficiario, Broker, Afiliado } from '../users/models';
+import {
+  MedikenUser,
+  Beneficiario,
+  Broker,
+  AfiliadoTitular,
+} from '../users/models';
 
 @Module({
   imports: [
-    SequelizeModule.forFeature([MedikenUser, Beneficiario, Broker, Afiliado]),
+    SequelizeModule.forFeature([
+      MedikenUser,
+      Beneficiario,
+      Broker,
+      AfiliadoTitular,
+    ]),
     PassportModule.register({ session: true }),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
