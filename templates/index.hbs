@@ -394,6 +394,7 @@
                                             <p>Hola <a class="link-email" href="mailto:{{email}}"><b>{{email}}</b></a>,</p>
                                             <p>Nos llego una solicitud para reestablecer la contraseña de su usuario para nuestra plataforma Mediken.</p>
                                             <p>Si no fue usted puede hacer caso omiso de este correo, de lo contrario haga clic en el enlace de abajo.</p>
+                                            <p>Nota: el token tiene una duración de una hora desde que se recibió el correo electrónico, pasado este tiempo debe reestablecer su contraseña nuevamente en caso que necesite reestablecerla.</p>
                                             <table role="presentation" border="0" cellpadding="0" cellspacing="0"
                                                 class="btn btn-primary">
                                                 <tbody>
@@ -403,7 +404,7 @@
                                                                 cellspacing="0">
                                                                 <tbody>
                                                                     <tr>
-                                                                        <td> <a href="{{urlPwd}}/reset-password"
+                                                                        <td> <a href='{{urlPwd}}/#/auth/change-password-reset?email={{email}}&token={{token}}&usuario={{usuario}}'
                                                                                 target="_blank">Reestablecer contraseña</a> </td>
                                                                     </tr>
                                                                 </tbody>

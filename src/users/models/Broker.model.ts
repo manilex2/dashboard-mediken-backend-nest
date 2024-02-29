@@ -38,17 +38,23 @@ export class Broker extends Model {
   notifChangePass3: boolean;
 
   @Column({ field: 'dsvcnotifchngpassdate1', allowNull: true })
-  notifChangePassDate1: Date;
+  notifChangePassDate1: string;
 
   @Column({ field: 'dsvcnotifchngpassdate2', allowNull: true })
-  notifChangePassDate2: Date;
+  notifChangePassDate2: string;
 
   @Column({ field: 'dsvcnotifchngpassdate3', allowNull: true })
-  notifChangePassDate3: Date;
+  notifChangePassDate3: string;
 
   @Column({ field: 'dsvcimg', allowNull: true })
   img: Buffer;
 
   @Column({ field: 'dsvcide', allowNull: true })
   usuario: string;
+
+  @Column({ field: 'dsvctokenresetpass', allowNull: true })
+  tokenReset: string;
+
+  @Column({ field: 'dsvctokenresetpassdate', allowNull: true })
+  tokenResetDate: string;
 }

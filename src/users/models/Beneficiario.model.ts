@@ -86,14 +86,20 @@ export class Beneficiario extends Model {
   notifChangePass3: boolean;
 
   @Column({ field: 'bevenotifchngpassdate1', allowNull: true })
-  notifChangePassDate1: Date;
+  notifChangePassDate1: string;
 
   @Column({ field: 'bevenotifchngpassdate2', allowNull: true })
-  notifChangePassDate2: Date;
+  notifChangePassDate2: string;
 
   @Column({ field: 'bevenotifchngpassdate3', allowNull: true })
-  notifChangePassDate3: Date;
+  notifChangePassDate3: string;
 
   @Column({ field: 'beveimg', allowNull: true })
   img: Buffer;
+
+  @Column({ field: 'bevetokenresetpass', allowNull: true })
+  tokenReset: string;
+
+  @Column({ field: 'bevetokenresetpassdate', allowNull: true })
+  tokenResetDate: string;
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpException } from '@nestjs/common';
+import { Controller, Post, Body, HttpException, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 import { UserDto } from '../users/dto/user/userDTO';
@@ -31,7 +31,19 @@ export class AuthController {
   async resetPassword(@Body() userDto: UserDto) {
     try {
       const user: Promise<object> = this.authService.resetPassword(userDto);
-      return user;
+      return [await user];
+    } catch (error) {
+      throw new HttpException(error.message, error.status);
+    }
+  }
+
+  @Public()
+  @Put('change-password-reset')
+  async changePasswordReset(@Body() userDto: UserDto) {
+    try {
+      const user: Promise<object> =
+        this.authService.changePasswordReset(userDto);
+      return [await user];
     } catch (error) {
       throw new HttpException(error.message, error.status);
     }

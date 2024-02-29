@@ -9,11 +9,13 @@ import {
   MedikenUser,
 } from 'src/users/models';
 import * as bcrypt from 'bcrypt';
-import { google } from 'googleapis';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { Options } from 'nodemailer/lib/smtp-transport';
 import { Op } from 'sequelize';
+import { readFile } from 'fs/promises';
+import * as crypto from 'crypto-js';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class AuthService {
@@ -205,29 +207,107 @@ export class AuthService {
     }
   }
 
-  async resetPassword(userDto: UserDto): Promise<object> {
+  async resetPassword(
+    data: UserDto,
+  ): Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular> {
+    let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
+    let token: string;
     try {
-      const oAuth2Client = new google.auth.OAuth2(
-        this.configService.get<string>('gmail.clientId'),
-        this.configService.get<string>('gmail.secret'),
-        'https://developers.google.com/oauthplayground',
-      );
+      user = await this.medikenUser.findOne({
+        where: {
+          email: data.email,
+        },
+        attributes: [
+          ['Dsusuemail', 'email'],
+          ['Dsusucod', 'codigoUsuario'],
+          ['Dsusuide', 'usuario'],
+        ],
+      });
+      if (user) {
+        token = await this.generateToken();
+        user.tokenReset = token;
+        user.tokenResetDate = DateTime.now()
+          .setLocale('es-ec')
+          .toISO({ includeOffset: false });
+        user = await user.save();
+      } else {
+        user = await this.broker.findOne({
+          where: {
+            email: data.email,
+          },
+          attributes: [
+            ['dsvcema', 'email'],
+            ['dsvccod', 'codigoBrokerComp'],
+            ['dsvcide', 'usuario'],
+          ],
+        });
+        if (user) {
+          token = await this.generateToken();
+          user.tokenReset = token;
+          user.tokenResetDate = user.tokenResetDate = DateTime.now()
+            .setLocale('es-ec')
+            .toISO({ includeOffset: false });
+          user = await user.save();
+        } else {
+          user = await this.afiliadoTitular.findOne({
+            where: {
+              email: data.email,
+            },
+            attributes: [
+              ['ClRgFema', 'email'],
+              ['ClRgide', 'usuario'],
+              ['ClRgcnt', 'contrato'],
+              ['ClRgcnsc', 'secuencial'],
+            ],
+          });
+          if (user) {
+            token = await this.generateToken();
+            user.tokenReset = token;
+            user.tokenResetDate = DateTime.now()
+              .setLocale('es-ec')
+              .toISO({ includeOffset: false });
+            user = await user.save();
+          } else {
+            user = await this.beneficiario.findOne({
+              where: {
+                email: data.email,
+              },
+              attributes: [
+                ['beveema', 'email'],
+                ['beveIde', 'usuario'],
+              ],
+            });
+            if (user) {
+              token = await this.generateToken();
+              user.tokenReset = token;
+              user.tokenResetDate = DateTime.now()
+                .setLocale('es-ec')
+                .toISO({ includeOffset: false });
+              user = await user.save();
+            } else {
+              throw new HttpException(
+                'Email no existe. Verifique su email e intente de nuevo o ponganse en contacto con el administrador',
+                HttpStatus.FORBIDDEN,
+              );
+            }
+          }
+        }
+      }
 
-      oAuth2Client.setCredentials({
-        refresh_token: this.configService.get<string>('gmail.refreshToken'),
+      const key = await this.readJsonFile(
+        `${process.cwd()}/config/google.json`,
+      ).then((data) => {
+        return data;
       });
 
-      const ACCESS_TOKEN: string = await this.obtenerTokenAcceso(oAuth2Client);
       const config: Options = {
         service: 'gmail',
         host: 'smtp.gmail.com',
         auth: {
           type: 'OAuth2',
-          user: this.configService.get<string>('gmail.user'),
-          clientId: this.configService.get<string>('gmail.clientId'),
-          clientSecret: this.configService.get<string>('gmail.secret'),
-          refreshToken: this.configService.get<string>('gmail.refreshToken'),
-          accessToken: ACCESS_TOKEN,
+          user: this.configService.get<string>('user'),
+          serviceClient: key.client_id,
+          privateKey: key.private_key,
         },
         tls: {
           rejectUnauthorized: true,
@@ -238,12 +318,14 @@ export class AuthService {
       await this.mailerService
         .sendMail({
           transporterName: 'gmail',
-          to: 'manilex2@gmail.com',
+          to: user.email,
           subject: 'SOLICITUD DE RESETEO DE CONTRASEÑA',
           template: 'index',
           context: {
-            email: userDto.email,
+            email: user.email.trim(),
             urlPwd: this.configService.get<string>('origin_url'),
+            token: user.tokenReset.trim(),
+            usuario: user.usuario.trim(),
           },
           attachments: [
             {
@@ -260,22 +342,251 @@ export class AuthService {
           console.error(err);
           throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
         });
-      return userDto;
+      return user;
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async obtenerTokenAcceso(oAuth2Client: any): Promise<string> {
-    const tokenInfo = await oAuth2Client.getAccessToken();
-    // Verificar si el token está próximo a expirar (por ejemplo, en los próximos 5 minutos)
-    if (tokenInfo.expiry_date - Date.now() < 5 * 60 * 1000) {
-      // Refrescar el token si está próximo a expirar
-      const newTokenInfo = await oAuth2Client.refreshAccessToken();
-      return newTokenInfo.token;
+  async changePasswordReset(
+    data: UserDto,
+  ): Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular> {
+    let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
+    let claveHash: string;
+    try {
+      user = await this.medikenUser.findOne({
+        where: {
+          tokenReset: data.token,
+          [Op.or]: [{ usuario: data.usuario }, { email: data.email }],
+        },
+        attributes: {
+          exclude: ['Dsusuimg'],
+        },
+      });
+      if (user) {
+        const initDate = DateTime.fromJSDate(
+          user.dataValues.tokenResetDate,
+        ).setZone('UTC');
+        const expireDate = DateTime.now().setZone('UTC', {
+          keepLocalTime: true,
+        });
+        if (expireDate.diff(initDate, ['minutes']).toObject().minutes <= 60) {
+          claveHash = await this.hashPassword(data.nuevaClave);
+          user.clave = claveHash;
+          user.tokenReset = null;
+          user.tokenResetDate = null;
+          if (!user.dataValues.notifChangePass1) {
+            user.notifChangePass1 = true;
+          }
+          if (!user.dataValues.notifChangePass2) {
+            user.notifChangePass2 = true;
+          }
+          if (!user.dataValues.notifChangePass3) {
+            user.notifChangePass3 = true;
+          }
+          if (!user.dataValues.notifChangePassDate1) {
+            user.notifChangePassDate1 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          if (!user.dataValues.notifChangePassDate2) {
+            user.notifChangePassDate2 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          if (!user.dataValues.notifChangePassDate3) {
+            user.notifChangePassDate3 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          user = await user.save();
+          return user;
+        } else {
+          throw new HttpException(
+            'Su token expiró. Debe reestablecer su contraseña nuevamente.',
+            HttpStatus.FORBIDDEN,
+          );
+        }
+      } else {
+        user = await this.broker.findOne({
+          where: {
+            tokenReset: data.token,
+            [Op.or]: [{ usuario: data.usuario }, { email: data.email }],
+          },
+          attributes: {
+            exclude: ['dsvcimg'],
+          },
+        });
+        if (user) {
+          const initDate = DateTime.fromJSDate(
+            user.dataValues.tokenResetDate,
+          ).setZone('UTC');
+          const expireDate = DateTime.now().setZone('UTC', {
+            keepLocalTime: true,
+          });
+          if (expireDate.diff(initDate, ['minutes']).toObject().minutes <= 60) {
+            claveHash = await this.hashPassword(data.nuevaClave);
+            user.clave = claveHash;
+            user.tokenReset = null;
+            user.tokenResetDate = null;
+            if (!user.dataValues.notifChangePass1) {
+              user.notifChangePass1 = true;
+            }
+            if (!user.dataValues.notifChangePass2) {
+              user.notifChangePass2 = true;
+            }
+            if (!user.dataValues.notifChangePass3) {
+              user.notifChangePass3 = true;
+            }
+            if (!user.dataValues.notifChangePassDate1) {
+              user.notifChangePassDate1 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            if (!user.dataValues.notifChangePassDate2) {
+              user.notifChangePassDate2 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            if (!user.dataValues.notifChangePassDate3) {
+              user.notifChangePassDate3 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            user = await user.save();
+            return user;
+          } else {
+            throw new HttpException(
+              'Su token expiró. Debe reestablecer su contraseña nuevamente.',
+              HttpStatus.FORBIDDEN,
+            );
+          }
+        } else {
+          user = await this.afiliadoTitular.findOne({
+            where: {
+              tokenReset: data.token,
+              [Op.or]: [{ usuario: data.usuario }, { email: data.email }],
+            },
+            attributes: {
+              exclude: ['Afiimg'],
+            },
+          });
+          if (user) {
+            const initDate = DateTime.fromJSDate(
+              user.dataValues.tokenResetDate,
+            ).setZone('UTC');
+            const expireDate = DateTime.now().setZone('UTC', {
+              keepLocalTime: true,
+            });
+            if (
+              expireDate.diff(initDate, ['minutes']).toObject().minutes <= 60
+            ) {
+              claveHash = await this.hashPassword(data.nuevaClave);
+              user.clave = claveHash;
+              user.tokenReset = null;
+              user.tokenResetDate = null;
+              if (!user.dataValues.notifChangePass1) {
+                user.notifChangePass1 = true;
+              }
+              if (!user.dataValues.notifChangePass2) {
+                user.notifChangePass2 = true;
+              }
+              if (!user.dataValues.notifChangePass3) {
+                user.notifChangePass3 = true;
+              }
+              if (!user.dataValues.notifChangePassDate1) {
+                user.notifChangePassDate1 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              if (!user.dataValues.notifChangePassDate2) {
+                user.notifChangePassDate2 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              if (!user.dataValues.notifChangePassDate3) {
+                user.notifChangePassDate3 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              user = await user.save();
+              return user;
+            } else {
+              throw new HttpException(
+                'Su token expiró. Debe reestablecer su contraseña nuevamente.',
+                HttpStatus.FORBIDDEN,
+              );
+            }
+          } else {
+            user = await this.beneficiario.findOne({
+              where: {
+                tokenReset: data.token,
+                [Op.or]: [{ usuario: data.usuario }, { email: data.email }],
+              },
+              attributes: {
+                exclude: ['beveimg'],
+              },
+            });
+            if (user) {
+              const initDate = DateTime.fromJSDate(
+                user.dataValues.tokenResetDate,
+              ).setZone('UTC');
+              const expireDate = DateTime.now().setZone('UTC', {
+                keepLocalTime: true,
+              });
+              if (
+                expireDate.diff(initDate, ['minutes']).toObject().minutes <= 60
+              ) {
+                claveHash = await this.hashPassword(data.nuevaClave);
+                user.clave = claveHash;
+                user.tokenReset = null;
+                user.tokenResetDate = null;
+                if (!user.dataValues.notifChangePass1) {
+                  user.notifChangePass1 = true;
+                }
+                if (!user.dataValues.notifChangePass2) {
+                  user.notifChangePass2 = true;
+                }
+                if (!user.dataValues.notifChangePass3) {
+                  user.notifChangePass3 = true;
+                }
+                if (!user.dataValues.notifChangePassDate1) {
+                  user.notifChangePassDate1 = DateTime.now().toISO({
+                    includeOffset: false,
+                  });
+                }
+                if (!user.dataValues.notifChangePassDate2) {
+                  user.notifChangePassDate2 = DateTime.now().toISO({
+                    includeOffset: false,
+                  });
+                }
+                if (!user.dataValues.notifChangePassDate3) {
+                  user.notifChangePassDate3 = DateTime.now().toISO({
+                    includeOffset: false,
+                  });
+                }
+                user = await user.save();
+                return user;
+              } else {
+                throw new HttpException(
+                  'Su token expiró. Debe reestablecer su contraseña nuevamente.',
+                  HttpStatus.FORBIDDEN,
+                );
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.FORBIDDEN);
     }
-    return tokenInfo.token;
+    if (user === null) {
+      throw new HttpException(
+        'Token ya utilizado. Debe reestablecer nuevamente la contraseña dandole a ¿Olvide mi contraseña?',
+        HttpStatus.FORBIDDEN,
+      );
+    }
   }
 
   async comparePasswords(
@@ -298,5 +609,18 @@ export class AuthService {
   async hashPassword(password: string): Promise<string> {
     const saltRounds = 10;
     return bcrypt.hash(password, saltRounds);
+  }
+
+  async generateToken(length: number = 256): Promise<string> {
+    const randomBytes = crypto.lib.WordArray.random(length / 2);
+    const timestampBytes = crypto.lib.WordArray.create([Date.now()]);
+    const combinedBytes = randomBytes.concat(timestampBytes);
+    const hash = crypto.SHA256(combinedBytes).toString(crypto.enc.Hex);
+    return hash.slice(0, length);
+  }
+
+  async readJsonFile(path): Promise<any> {
+    const file = await readFile(path, 'utf8');
+    return JSON.parse(file);
   }
 }

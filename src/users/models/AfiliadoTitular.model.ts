@@ -86,14 +86,20 @@ export class AfiliadoTitular extends Model {
   notifChangePass3: boolean;
 
   @Column({ field: 'ClRgnotifchngpassdate1', allowNull: true })
-  notifChangePassDate1: Date;
+  notifChangePassDate1: string;
 
   @Column({ field: 'ClRgnotifchngpassdate2', allowNull: true })
-  notifChangePassDate2: Date;
+  notifChangePassDate2: string;
 
   @Column({ field: 'ClRgnotifchngpassdate3', allowNull: true })
-  notifChangePassDate3: Date;
+  notifChangePassDate3: string;
 
   @Column({ field: 'ClRgimg', allowNull: true })
   img: Buffer;
+
+  @Column({ field: 'ClRgtokenresetpass', allowNull: true })
+  tokenReset: string;
+
+  @Column({ field: 'ClRgtokenresetpassdate', allowNull: true })
+  tokenResetDate: string;
 }

@@ -14,11 +14,6 @@ export const configuration = () => ({
   },
   gmail: {
     user: process.env.GMAIL_USER,
-    pwd: process.env.GMAIL_PASS,
-    clientId: process.env.GMAIL_CLIENT,
-    secret: process.env.GMAIL_SECRET,
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-    accessToken: process.env.GMAIL_ACCESS_TOKEN,
   },
   msal: {
     clientId: process.env.MSAL_CLIENT_ID,

@@ -35,17 +35,23 @@ export class MedikenUser extends Model {
   notifChangePass3: boolean;
 
   @Column({ field: 'Dsusunotifchngpassdate1', allowNull: true })
-  notifChangePassDate1: Date;
+  notifChangePassDate1: string;
 
   @Column({ field: 'Dsusunotifchngpassdate2', allowNull: true })
-  notifChangePassDate2: Date;
+  notifChangePassDate2: string;
 
   @Column({ field: 'Dsusunotifchngpassdate3', allowNull: true })
-  notifChangePassDate3: Date;
+  notifChangePassDate3: string;
 
   @Column({ field: 'Dsusuimg', allowNull: true })
   img: Buffer;
 
   @Column({ field: 'Dsusuide', allowNull: true })
   usuario: string;
+
+  @Column({ field: 'Dsusutokenresetpass', allowNull: true })
+  tokenReset: string;
+
+  @Column({ field: 'Dsusutokenresetpassdate', allowNull: true })
+  tokenResetDate: string;
 }
