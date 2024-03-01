@@ -102,4 +102,7 @@ export class Beneficiario extends Model {
 
   @Column({ field: 'bevetokenresetpassdate', allowNull: true })
   tokenResetDate: string;
+
+  @Column({ field: 'bevefirstlogin', allowNull: true })
+  firstLogin: boolean;
 }

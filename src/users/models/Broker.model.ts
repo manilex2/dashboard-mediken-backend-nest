@@ -57,4 +57,7 @@ export class Broker extends Model {
 
   @Column({ field: 'dsvctokenresetpassdate', allowNull: true })
   tokenResetDate: string;
+
+  @Column({ field: 'dsvcfirstlogin', allowNull: true })
+  firstLogin: boolean;
 }

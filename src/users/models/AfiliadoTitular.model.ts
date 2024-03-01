@@ -102,4 +102,7 @@ export class AfiliadoTitular extends Model {
 
   @Column({ field: 'ClRgtokenresetpassdate', allowNull: true })
   tokenResetDate: string;
+
+  @Column({ field: 'ClRgfirstlogin', allowNull: true })
+  firstLogin: boolean;
 }

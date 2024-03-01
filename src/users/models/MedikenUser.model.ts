@@ -54,4 +54,7 @@ export class MedikenUser extends Model {
 
   @Column({ field: 'Dsusutokenresetpassdate', allowNull: true })
   tokenResetDate: string;
+
+  @Column({ field: 'Dsusufirstlogin', allowNull: true })
+  firstLogin: boolean;
 }

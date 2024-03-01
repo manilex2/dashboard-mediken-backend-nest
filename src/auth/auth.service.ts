@@ -52,7 +52,7 @@ export class AuthService {
     try {
       user = await this.medikenUser.findOne({
         where: {
-          usuario: data.usuario,
+          [Op.or]: [{ usuario: data.usuario }, { codigoUsuario: data.usuario }],
         },
         attributes: {
           exclude: ['Dsusuimg'],
@@ -77,7 +77,10 @@ export class AuthService {
       } else {
         user = await this.broker.findOne({
           where: {
-            usuario: data.usuario,
+            [Op.or]: [
+              { usuario: data.usuario },
+              { codigoBrokerComp: data.usuario },
+            ],
           },
           attributes: {
             exclude: ['dsvcimg'],
@@ -215,7 +218,7 @@ export class AuthService {
     try {
       user = await this.medikenUser.findOne({
         where: {
-          email: data.email,
+          [Op.or]: [{ usuario: data.email }, { email: data.email }],
         },
         attributes: [
           ['Dsusuemail', 'email'],
@@ -224,6 +227,12 @@ export class AuthService {
         ],
       });
       if (user) {
+        if (!user.dataValues.email) {
+          throw new HttpException(
+            'Lo siento, no hay un email asociado a este usuario, por favor contacte al administrador.',
+            HttpStatus.FORBIDDEN,
+          );
+        }
         token = await this.generateToken();
         user.tokenReset = token;
         user.tokenResetDate = DateTime.now()
@@ -233,7 +242,7 @@ export class AuthService {
       } else {
         user = await this.broker.findOne({
           where: {
-            email: data.email,
+            [Op.or]: [{ usuario: data.email }, { email: data.email }],
           },
           attributes: [
             ['dsvcema', 'email'],
@@ -242,6 +251,12 @@ export class AuthService {
           ],
         });
         if (user) {
+          if (!user.dataValues.email) {
+            throw new HttpException(
+              'Lo siento, no hay un email asociado a este usuario, por favor contacte al administrador.',
+              HttpStatus.FORBIDDEN,
+            );
+          }
           token = await this.generateToken();
           user.tokenReset = token;
           user.tokenResetDate = user.tokenResetDate = DateTime.now()
@@ -251,7 +266,7 @@ export class AuthService {
         } else {
           user = await this.afiliadoTitular.findOne({
             where: {
-              email: data.email,
+              [Op.or]: [{ usuario: data.email }, { email: data.email }],
             },
             attributes: [
               ['ClRgFema', 'email'],
@@ -261,6 +276,12 @@ export class AuthService {
             ],
           });
           if (user) {
+            if (!user.dataValues.email) {
+              throw new HttpException(
+                'Lo siento, no hay un email asociado a este usuario, por favor contacte al administrador.',
+                HttpStatus.FORBIDDEN,
+              );
+            }
             token = await this.generateToken();
             user.tokenReset = token;
             user.tokenResetDate = DateTime.now()
@@ -270,7 +291,7 @@ export class AuthService {
           } else {
             user = await this.beneficiario.findOne({
               where: {
-                email: data.email,
+                [Op.or]: [{ usuario: data.email }, { email: data.email }],
               },
               attributes: [
                 ['beveema', 'email'],
@@ -278,6 +299,12 @@ export class AuthService {
               ],
             });
             if (user) {
+              if (!user.dataValues.email) {
+                throw new HttpException(
+                  'Lo siento, no hay un email asociado a este usuario, por favor contacte al administrador.',
+                  HttpStatus.FORBIDDEN,
+                );
+              }
               token = await this.generateToken();
               user.tokenReset = token;
               user.tokenResetDate = DateTime.now()
@@ -286,7 +313,7 @@ export class AuthService {
               user = await user.save();
             } else {
               throw new HttpException(
-                'Email no existe. Verifique su email e intente de nuevo o ponganse en contacto con el administrador',
+                'Email o Usuario no existe. Verifique su email o usuario e intente de nuevo o ponganse en contacto con el administrador',
                 HttpStatus.FORBIDDEN,
               );
             }
