@@ -40,3 +40,6 @@ lerna-debug.log*
 # Env Files
 **/*.env
 !config/env/.env.example
+
+# Key
+google.json
