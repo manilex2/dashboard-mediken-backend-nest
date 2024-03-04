@@ -17,13 +17,15 @@ export class EmbedConfigService {
     private readonly httpService: HttpService,
   ) {}
 
-  async getEmbedInfo(): Promise<
-    EmbedConfig | { status: number; error: string }
-  > {
+  async getEmbedInfo(
+    tipoUsuario,
+  ): Promise<EmbedConfig | { status: number; error: string }> {
     try {
       const embedParams = await this.getEmbedParamsForSingleReport(
         this.configService.get<string>('powerbi.workspaceId'),
-        this.configService.get<string>('powerbi.reportId'),
+        tipoUsuario == 'AfiliadoTitular'
+          ? this.configService.get<string>('powerbi.reportIdAfiLTit')
+          : this.configService.get<string>('powerbi.reportId'),
       );
 
       return {

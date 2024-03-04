@@ -30,8 +30,9 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() userDto: UserDto) {
     try {
-      const user: Promise<object> = this.authService.resetPassword(userDto);
-      return [await user];
+      const resetPass: Promise<object> =
+        this.authService.resetPassword(userDto);
+      return await resetPass;
     } catch (error) {
       throw new HttpException(error.message, error.status);
     }
@@ -41,9 +42,9 @@ export class AuthController {
   @Put('change-password-reset')
   async changePasswordReset(@Body() userDto: UserDto) {
     try {
-      const user: Promise<object> =
+      const changePass: Promise<object> =
         this.authService.changePasswordReset(userDto);
-      return [await user];
+      return await changePass;
     } catch (error) {
       throw new HttpException(error.message, error.status);
     }

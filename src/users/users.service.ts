@@ -3,6 +3,8 @@ import { UserDto } from './dto/user/userDTO';
 import { InjectModel } from '@nestjs/sequelize';
 import { MedikenUser, Beneficiario, Broker, AfiliadoTitular } from './models';
 import * as bcrypt from 'bcrypt';
+import { DateTime } from 'luxon';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class UsersService {
@@ -19,130 +21,367 @@ export class UsersService {
 
   async updatePassword(id: string, data: UserDto): Promise<object> {
     let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
+    let claveHash: string;
     try {
       user = await this.medikenUser.findOne({
         where: {
-          usuario: id,
+          [Op.or]: [{ usuario: id }, { codigoUsuario: id }],
         },
       });
       if (user) {
-        const passwordMatch = await this.comparePasswords(
-          data.clave.trim(),
-          user.dataValues.clave.trim(),
-        );
-        if (passwordMatch) {
-          const newPass = await this.hashPassword(data.nuevaClave);
-          await this.medikenUser.update(
-            { clave: newPass.trim() },
-            {
-              where: {
-                usuario: id,
-              },
-            },
-          );
+        claveHash = await this.hashPassword(data.clave);
+        user.clave = claveHash;
+        if (data.email && data.email != user.dataValues.email) {
+          user.email = data.email;
+        }
+        if (!user.dataValues.notifChangePass1) {
+          user.notifChangePass1 = true;
+        }
+        if (!user.dataValues.notifChangePass2) {
+          user.notifChangePass2 = true;
+        }
+        if (!user.dataValues.notifChangePass3) {
+          user.notifChangePass3 = true;
+        }
+        if (!user.dataValues.notifChangePassDate1) {
+          user.notifChangePassDate1 = DateTime.now().toISO({
+            includeOffset: false,
+          });
+        }
+        if (!user.dataValues.notifChangePassDate2) {
+          user.notifChangePassDate2 = DateTime.now().toISO({
+            includeOffset: false,
+          });
+        }
+        if (!user.dataValues.notifChangePassDate3) {
+          user.notifChangePassDate3 = DateTime.now().toISO({
+            includeOffset: false,
+          });
+        }
+        user = await user.save();
+        return {
+          status: 200,
+          message: 'Contraseña cambiada exitosamente',
+        };
+      } else {
+        user = await this.broker.findOne({
+          where: {
+            [Op.or]: [{ usuario: id }, { codigoBrokerComp: id }],
+          },
+        });
+        if (user) {
+          claveHash = await this.hashPassword(data.clave);
+          user.clave = claveHash;
+          if (data.email && data.email != user.dataValues.email) {
+            user.email = data.email;
+          }
+          if (!user.dataValues.notifChangePass1) {
+            user.notifChangePass1 = true;
+          }
+          if (!user.dataValues.notifChangePass2) {
+            user.notifChangePass2 = true;
+          }
+          if (!user.dataValues.notifChangePass3) {
+            user.notifChangePass3 = true;
+          }
+          if (!user.dataValues.notifChangePassDate1) {
+            user.notifChangePassDate1 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          if (!user.dataValues.notifChangePassDate2) {
+            user.notifChangePassDate2 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          if (!user.dataValues.notifChangePassDate3) {
+            user.notifChangePassDate3 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          user = await user.save();
           return {
             status: 200,
             message: 'Contraseña cambiada exitosamente',
           };
         } else {
-          throw new HttpException(
-            'Usuario no autorizado. Verifique usuario y contraseña',
-            HttpStatus.FORBIDDEN,
-          );
-        }
-      } else {
-        user = await this.broker.findOne({
-          where: {
-            usuario: id,
-          },
-        });
-        if (user) {
-          const passwordMatch = await this.comparePasswords(
-            data.clave.trim(),
-            user.dataValues.clave.trim(),
-          );
-          if (passwordMatch) {
-            const newPass = await this.hashPassword(data.nuevaClave);
-            await this.broker.update(
-              { clave: newPass.trim() },
-              {
-                where: {
-                  usuario: id,
-                },
-              },
-            );
-            return {
-              status: 200,
-              message: 'Contraseña cambiada exitosamente',
-            };
-          } else {
-            throw new HttpException(
-              'Usuario no autorizado. Verifique usuario y contraseña',
-              HttpStatus.FORBIDDEN,
-            );
-          }
-        } else {
-          user = await this.beneficiario.findOne({
+          user = await this.afiliadoTitular.findOne({
             where: {
               usuario: id,
             },
           });
           if (user) {
-            const passwordMatch = await this.comparePasswords(
-              data.clave.trim(),
-              user.dataValues.clave.trim(),
-            );
-            if (passwordMatch) {
-              const newPass = await this.hashPassword(data.nuevaClave);
-              await this.beneficiario.update(
-                { clave: newPass.trim() },
-                {
-                  where: {
-                    usuario: id,
-                  },
-                },
-              );
-              return {
-                status: 200,
-                message: 'Contraseña cambiada exitosamente',
-              };
-            } else {
-              throw new HttpException(
-                'Usuario no autorizado. Verifique usuario y contraseña',
-                HttpStatus.FORBIDDEN,
-              );
+            claveHash = await this.hashPassword(data.clave);
+            user.clave = claveHash;
+            if (data.email && data.email != user.dataValues.email) {
+              user.email = data.email;
             }
+            if (!user.dataValues.notifChangePass1) {
+              user.notifChangePass1 = true;
+            }
+            if (!user.dataValues.notifChangePass2) {
+              user.notifChangePass2 = true;
+            }
+            if (!user.dataValues.notifChangePass3) {
+              user.notifChangePass3 = true;
+            }
+            if (!user.dataValues.notifChangePassDate1) {
+              user.notifChangePassDate1 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            if (!user.dataValues.notifChangePassDate2) {
+              user.notifChangePassDate2 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            if (!user.dataValues.notifChangePassDate3) {
+              user.notifChangePassDate3 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            user = await user.save();
+            return {
+              status: 200,
+              message: 'Contraseña cambiada exitosamente',
+            };
           } else {
-            user = await this.afiliadoTitular.findOne({
+            user = await this.beneficiario.findOne({
               where: {
                 usuario: id,
               },
             });
             if (user) {
-              const passwordMatch = await this.comparePasswords(
-                data.clave.trim(),
-                user.dataValues.clave.trim(),
-              );
-              if (passwordMatch) {
-                const newPass = await this.hashPassword(data.nuevaClave);
-                await this.afiliadoTitular.update(
-                  { clave: newPass.trim() },
-                  {
-                    where: {
-                      usuario: id,
-                    },
-                  },
-                );
-                return {
-                  status: 200,
-                  message: 'Contraseña cambiada exitosamente',
-                };
-              } else {
-                throw new HttpException(
-                  'Usuario no autorizado. Verifique usuario y contraseña',
-                  HttpStatus.FORBIDDEN,
-                );
+              claveHash = await this.hashPassword(data.clave);
+              user.clave = claveHash;
+              if (data.email && data.email != user.dataValues.email) {
+                user.email = data.email;
               }
+              if (!user.dataValues.notifChangePass1) {
+                user.notifChangePass1 = true;
+              }
+              if (!user.dataValues.notifChangePass2) {
+                user.notifChangePass2 = true;
+              }
+              if (!user.dataValues.notifChangePass3) {
+                user.notifChangePass3 = true;
+              }
+              if (!user.dataValues.notifChangePassDate1) {
+                user.notifChangePassDate1 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              if (!user.dataValues.notifChangePassDate2) {
+                user.notifChangePassDate2 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              if (!user.dataValues.notifChangePassDate3) {
+                user.notifChangePassDate3 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              user = await user.save();
+              return {
+                status: 200,
+                message: 'Contraseña cambiada exitosamente',
+              };
+            }
+          }
+        }
+      }
+    } catch (error) {
+      throw new HttpException(
+        'Usuario no autorizado. Verifique usuario y contraseña',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+    if (user === null) {
+      throw new HttpException(
+        'Usuario no autorizado. Verifique usuario y contraseña',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+  }
+
+  async updateFirstLogin(
+    id: string,
+    data: UserDto,
+  ): Promise<MedikenUser | Broker | AfiliadoTitular | Beneficiario> {
+    let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
+    let claveHash: string;
+    try {
+      user = await this.medikenUser.findOne({
+        where: {
+          [Op.or]: [{ usuario: id }, { codigoUsuario: id }],
+        },
+      });
+      if (user) {
+        user.usuario = data.nuevoUsuario;
+        user.email = data.email;
+        if (data.clave) {
+          claveHash = await this.hashPassword(data.clave);
+          user.clave = claveHash;
+          if (!user.dataValues.notifChangePass1) {
+            user.notifChangePass1 = true;
+          }
+          if (!user.dataValues.notifChangePass2) {
+            user.notifChangePass2 = true;
+          }
+          if (!user.dataValues.notifChangePass3) {
+            user.notifChangePass3 = true;
+          }
+          if (!user.dataValues.notifChangePassDate1) {
+            user.notifChangePassDate1 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          if (!user.dataValues.notifChangePassDate2) {
+            user.notifChangePassDate2 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+          if (!user.dataValues.notifChangePassDate3) {
+            user.notifChangePassDate3 = DateTime.now().toISO({
+              includeOffset: false,
+            });
+          }
+        }
+        if (data.img) {
+          user.img = data.img;
+        }
+        user.firstLogin = false;
+        user = await user.save();
+        return user;
+      } else {
+        user = await this.broker.findOne({
+          where: {
+            [Op.or]: [{ usuario: id }, { codigoBrokerComp: id }],
+          },
+        });
+        if (user) {
+          user.usuario = data.nuevoUsuario;
+          user.email = data.email;
+          if (data.clave) {
+            claveHash = await this.hashPassword(data.clave);
+            user.clave = claveHash;
+            if (!user.dataValues.notifChangePass1) {
+              user.notifChangePass1 = true;
+            }
+            if (!user.dataValues.notifChangePass2) {
+              user.notifChangePass2 = true;
+            }
+            if (!user.dataValues.notifChangePass3) {
+              user.notifChangePass3 = true;
+            }
+            if (!user.dataValues.notifChangePassDate1) {
+              user.notifChangePassDate1 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            if (!user.dataValues.notifChangePassDate2) {
+              user.notifChangePassDate2 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+            if (!user.dataValues.notifChangePassDate3) {
+              user.notifChangePassDate3 = DateTime.now().toISO({
+                includeOffset: false,
+              });
+            }
+          }
+          if (data.img) {
+            user.img = data.img;
+          }
+          user.firstLogin = false;
+          user = await user.save();
+          return user;
+        } else {
+          user = await this.afiliadoTitular.findOne({
+            where: {
+              usuario: id,
+            },
+          });
+          if (user) {
+            user.usuario = data.nuevoUsuario;
+            user.email = data.email;
+            if (data.clave) {
+              claveHash = await this.hashPassword(data.clave);
+              user.clave = claveHash;
+              if (!user.dataValues.notifChangePass1) {
+                user.notifChangePass1 = true;
+              }
+              if (!user.dataValues.notifChangePass2) {
+                user.notifChangePass2 = true;
+              }
+              if (!user.dataValues.notifChangePass3) {
+                user.notifChangePass3 = true;
+              }
+              if (!user.dataValues.notifChangePassDate1) {
+                user.notifChangePassDate1 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              if (!user.dataValues.notifChangePassDate2) {
+                user.notifChangePassDate2 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+              if (!user.dataValues.notifChangePassDate3) {
+                user.notifChangePassDate3 = DateTime.now().toISO({
+                  includeOffset: false,
+                });
+              }
+            }
+            if (data.img) {
+              user.img = data.img;
+            }
+            user.firstLogin = false;
+            user = await user.save();
+            return user;
+          } else {
+            user = await this.beneficiario.findOne({
+              where: {
+                usuario: id,
+              },
+            });
+            if (user) {
+              user.usuario = data.nuevoUsuario;
+              user.email = data.email;
+              if (data.clave) {
+                claveHash = await this.hashPassword(data.clave);
+                user.clave = claveHash;
+                if (!user.dataValues.notifChangePass1) {
+                  user.notifChangePass1 = true;
+                }
+                if (!user.dataValues.notifChangePass2) {
+                  user.notifChangePass2 = true;
+                }
+                if (!user.dataValues.notifChangePass3) {
+                  user.notifChangePass3 = true;
+                }
+                if (!user.dataValues.notifChangePassDate1) {
+                  user.notifChangePassDate1 = DateTime.now().toISO({
+                    includeOffset: false,
+                  });
+                }
+                if (!user.dataValues.notifChangePassDate2) {
+                  user.notifChangePassDate2 = DateTime.now().toISO({
+                    includeOffset: false,
+                  });
+                }
+                if (!user.dataValues.notifChangePassDate3) {
+                  user.notifChangePassDate3 = DateTime.now().toISO({
+                    includeOffset: false,
+                  });
+                }
+              }
+              if (data.img) {
+                user.img = data.img;
+              }
+              user.firstLogin = false;
+              user = await user.save();
+              return user;
             }
           }
         }
@@ -166,78 +405,58 @@ export class UsersService {
     try {
       user = await this.medikenUser.findOne({
         where: {
-          usuario: id,
+          [Op.or]: [{ usuario: id }, { codigoUsuario: id }],
         },
       });
       if (user) {
-        await this.medikenUser.update(
-          { img: data },
-          {
-            where: {
-              usuario: id,
-            },
-          },
-        );
+        user.img = data;
+        user = await user.save();
+        const imgBuffer: Buffer = user.dataValues.img;
+        const imgBase64 = imgBuffer.toString('base64');
         return {
-          status: 200,
-          message: 'Imágen actualizada exitosamente',
+          img: imgBase64,
         };
       } else {
         user = await this.broker.findOne({
           where: {
-            usuario: id,
+            [Op.or]: [{ usuario: id }, { codigoBrokerComp: id }],
           },
         });
         if (user) {
-          await this.broker.update(
-            { img: data },
-            {
-              where: {
-                usuario: id,
-              },
-            },
-          );
+          user.img = data;
+          user = await user.save();
+          const imgBuffer: Buffer = user.dataValues.img;
+          const imgBase64 = imgBuffer.toString('base64');
           return {
-            status: 200,
-            message: 'Imágen actualizada exitosamente',
+            img: imgBase64,
           };
         } else {
-          user = await this.beneficiario.findOne({
+          user = await this.afiliadoTitular.findOne({
             where: {
               usuario: id,
             },
           });
           if (user) {
-            await this.beneficiario.update(
-              { img: data },
-              {
-                where: {
-                  usuario: id,
-                },
-              },
-            );
+            user.img = data;
+            user = await user.save();
+            const imgBuffer: Buffer = user.dataValues.img;
+            const imgBase64 = imgBuffer.toString('base64');
             return {
-              status: 200,
-              message: 'Imágen actualizada exitosamente',
+              img: imgBase64,
             };
           } else {
-            user = await this.afiliadoTitular.findOne({
+            user = await this.beneficiario.findOne({
               where: {
                 usuario: id,
               },
             });
             if (user) {
-              await this.afiliadoTitular.update(
-                { img: data },
-                {
-                  where: {
-                    usuario: id,
-                  },
-                },
-              );
+              user.img = data;
+              user = await user.save();
+              const imgBuffer: Buffer = user.dataValues.img;
+              const imgBase64 = imgBuffer.toString('base64');
               return {
-                status: 200,
-                message: 'Imágen actualizada exitosamente',
+                img: imgBase64,
               };
             } else {
               throw new HttpException(
@@ -261,31 +480,29 @@ export class UsersService {
     try {
       user = this.medikenUser.findOne({
         where: {
-          usuario: id,
+          [Op.or]: [{ usuario: id }, { codigoUsuario: id }],
         },
       });
       if (user && (await user).dataValues.img) {
         const imgBuffer: Buffer = (await user).dataValues.img;
         const imgBase64 = imgBuffer.toString('base64');
         return {
-          status: 200,
-          message: imgBase64,
+          img: imgBase64,
         };
       } else {
         user = this.broker.findOne({
           where: {
-            usuario: id,
+            [Op.or]: [{ usuario: id }, { codigoBrokerComp: id }],
           },
         });
         if (user && (await user).dataValues.img) {
           const imgBuffer: Buffer = (await user).dataValues.img;
           const imgBase64 = imgBuffer.toString('base64');
           return {
-            status: 200,
-            message: imgBase64,
+            img: imgBase64,
           };
         } else {
-          user = this.beneficiario.findOne({
+          user = this.afiliadoTitular.findOne({
             where: {
               usuario: id,
             },
@@ -294,11 +511,10 @@ export class UsersService {
             const imgBuffer: Buffer = (await user).dataValues.img;
             const imgBase64 = imgBuffer.toString('base64');
             return {
-              status: 200,
-              message: imgBase64,
+              img: imgBase64,
             };
           } else {
-            user = this.afiliadoTitular.findOne({
+            user = this.beneficiario.findOne({
               where: {
                 usuario: id,
               },
@@ -307,8 +523,7 @@ export class UsersService {
               const imgBuffer: Buffer = (await user).dataValues.img;
               const imgBase64 = imgBuffer.toString('base64');
               return {
-                status: 200,
-                message: imgBase64,
+                img: imgBase64,
               };
             } else {
               throw new HttpException(

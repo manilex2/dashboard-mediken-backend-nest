@@ -50,22 +50,30 @@ export class AuthService {
   ): Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular> {
     let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
     try {
+      // TODO: Eliminar OR de codigoUsuario
       user = await this.medikenUser.findOne({
         where: {
           [Op.or]: [{ usuario: data.usuario }, { codigoUsuario: data.usuario }],
         },
-        attributes: {
-          exclude: ['Dsusuimg'],
-        },
       });
       if (user) {
-        const passwordMatch = await this.comparePasswords(
+        let passwordMatch = await this.comparePasswords(
           data.clave.trim(),
           user.dataValues.clave.trim(),
         );
+        if (!passwordMatch && data.noNewPass) {
+          passwordMatch = true;
+        }
         if (passwordMatch) {
-          user.dataValues.usuario = user.dataValues.usuario.trim();
+          // TODO: Eliminar asignacion de codigoUsuario como usuario
+          user.dataValues.usuario = user.dataValues.usuario
+            ? user.dataValues.usuario.trim()
+            : user.dataValues.codigoUsuario.trim();
           delete user.dataValues.clave;
+          delete user.dataValues.img;
+          user.dataValues.email = user.dataValues.email
+            ? user.dataValues.email.trim()
+            : null;
           user.dataValues.tipoUsuario = 'Mediken';
           return user;
         } else {
@@ -75,6 +83,7 @@ export class AuthService {
           );
         }
       } else {
+        // TODO: Eliminar OR de codigoBrokerComp
         user = await this.broker.findOne({
           where: {
             [Op.or]: [
@@ -87,13 +96,23 @@ export class AuthService {
           },
         });
         if (user) {
-          const passwordMatch = await this.comparePasswords(
+          let passwordMatch = await this.comparePasswords(
             data.clave.trim(),
             user.dataValues.clave.trim(),
           );
+          if (!passwordMatch && data.noNewPass) {
+            passwordMatch = true;
+          }
           if (passwordMatch) {
-            user.dataValues.usuario = user.dataValues.usuario.trim();
+            // TODO: Eliminar asignacion de codigoBrokerComp como usuario
+            user.dataValues.usuario = user.dataValues.usuario
+              ? user.dataValues.usuario.trim()
+              : user.dataValues.codigoBrokerComp.trim();
             delete user.dataValues.clave;
+            delete user.dataValues.img;
+            user.dataValues.email = user.dataValues.email
+              ? user.dataValues.email.trim()
+              : null;
             user.dataValues.tipoUsuario = 'Broker';
             return user;
           } else {
@@ -112,13 +131,21 @@ export class AuthService {
             },
           });
           if (user) {
-            const passwordMatch = await this.comparePasswords(
+            let passwordMatch = await this.comparePasswords(
               data.clave.trim(),
               user.dataValues.clave.trim(),
             );
+            if (!passwordMatch && data.noNewPass) {
+              passwordMatch = true;
+            }
             if (passwordMatch) {
+              user.dataValues.usuario = user.dataValues.usuario.trim();
               delete user.dataValues.clave;
+              delete user.dataValues.img;
               user.dataValues.tipoUsuario = 'AfiliadoTitular';
+              user.dataValues.email = user.dataValues.email
+                ? user.dataValues.email.trim()
+                : null;
               const contratos = await this.afiliadoTitular.findAll({
                 where: {
                   usuario: data.usuario,
@@ -177,14 +204,21 @@ export class AuthService {
               },
             });
             if (user) {
-              const passwordMatch = await this.comparePasswords(
+              let passwordMatch = await this.comparePasswords(
                 data.clave.trim(),
                 user.dataValues.clave.trim(),
               );
+              if (!passwordMatch && data.noNewPass) {
+                passwordMatch = true;
+              }
               if (passwordMatch) {
                 user.dataValues.usuario = user.dataValues.usuario.trim();
                 delete user.dataValues.clave;
+                delete user.dataValues.img;
                 user.dataValues.tipoUsuario = 'Beneficiario';
+                user.dataValues.email = user.dataValues.email
+                  ? user.dataValues.email.trim()
+                  : null;
                 return user;
               } else {
                 throw new HttpException(
@@ -210,9 +244,7 @@ export class AuthService {
     }
   }
 
-  async resetPassword(
-    data: UserDto,
-  ): Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular> {
+  async resetPassword(data: UserDto): Promise<object> {
     let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
     let token: string;
     try {
@@ -369,16 +401,17 @@ export class AuthService {
           console.error(err);
           throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
         });
-      return user;
+      return {
+        status: 200,
+        message: 'Se envió un correo para el reseteo de contraseña',
+      };
     } catch (error) {
       console.log(error);
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async changePasswordReset(
-    data: UserDto,
-  ): Promise<MedikenUser | Broker | Beneficiario | AfiliadoTitular> {
+  async changePasswordReset(data: UserDto): Promise<object> {
     let user: MedikenUser | Broker | Beneficiario | AfiliadoTitular;
     let claveHash: string;
     try {
@@ -428,7 +461,10 @@ export class AuthService {
             });
           }
           user = await user.save();
-          return user;
+          return {
+            status: 200,
+            message: 'Contraseña cambiada exitosamente',
+          };
         } else {
           throw new HttpException(
             'Su token expiró. Debe reestablecer su contraseña nuevamente.',
@@ -482,7 +518,10 @@ export class AuthService {
               });
             }
             user = await user.save();
-            return user;
+            return {
+              status: 200,
+              message: 'Contraseña cambiada exitosamente',
+            };
           } else {
             throw new HttpException(
               'Su token expiró. Debe reestablecer su contraseña nuevamente.',
@@ -538,7 +577,10 @@ export class AuthService {
                 });
               }
               user = await user.save();
-              return user;
+              return {
+                status: 200,
+                message: 'Contraseña cambiada exitosamente',
+              };
             } else {
               throw new HttpException(
                 'Su token expiró. Debe reestablecer su contraseña nuevamente.',
@@ -594,7 +636,10 @@ export class AuthService {
                   });
                 }
                 user = await user.save();
-                return user;
+                return {
+                  status: 200,
+                  message: 'Contraseña cambiada exitosamente',
+                };
               } else {
                 throw new HttpException(
                   'Su token expiró. Debe reestablecer su contraseña nuevamente.',

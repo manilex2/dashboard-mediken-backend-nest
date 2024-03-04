@@ -28,6 +28,7 @@ export const configuration = () => ({
     pbiPassword: process.env.PBI_PASSWORD,
     workspaceId: process.env.PBI_WORKSPACE_ID,
     reportId: process.env.PBI_REPORT_ID,
+    reportIdAfiLTit: process.env.PBI_REPORT_ID_AFIL_TIT,
     apiURL: process.env.PBI_API_URL,
   },
 });

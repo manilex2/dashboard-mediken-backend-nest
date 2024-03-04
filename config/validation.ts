@@ -26,5 +26,6 @@ export const validationSchema = Joi.object({
   PBI_PASSWORD: Joi.string().required(),
   PBI_WORKSPACE_ID: Joi.string().required(),
   PBI_REPORT_ID: Joi.string().required(),
+  PBI_REPORT_ID_AFIL_TIT: Joi.string().required(),
   PBI_API_URL: Joi.string().required(),
 });

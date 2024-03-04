@@ -5,4 +5,7 @@ export class UserDto {
   nuevaClave?: string;
   email?: string;
   token?: string;
+  img?: Buffer;
+  nuevoUsuario?: string;
+  noNewPass?: boolean;
 }
