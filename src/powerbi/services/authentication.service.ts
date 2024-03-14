@@ -56,5 +56,7 @@ export class AuthenticationService {
         clientCredentialRequest,
       );
     }
+
+    return null;
   }
 }

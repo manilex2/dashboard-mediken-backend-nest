@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { UserDto } from './dto/user/userDTO';
+import { UserDto } from './dto/user/userDto';
 import { InjectModel } from '@nestjs/sequelize';
 import { MedikenUser, Beneficiario, Broker, AfiliadoTitular } from './models';
 import * as bcrypt from 'bcrypt';
@@ -186,6 +186,11 @@ export class UsersService {
                 status: 200,
                 message: 'Contraseña cambiada exitosamente',
               };
+            } else {
+              throw new HttpException(
+                'Usuario no autorizado. Verifique usuario y contraseña',
+                HttpStatus.FORBIDDEN,
+              );
             }
           }
         }
@@ -382,6 +387,11 @@ export class UsersService {
               user.firstLogin = false;
               user = await user.save();
               return user;
+            } else {
+              throw new HttpException(
+                'Usuario no autorizado. Verifique usuario y contraseña',
+                HttpStatus.FORBIDDEN,
+              );
             }
           }
         }

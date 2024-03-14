@@ -17,7 +17,7 @@ async function bootstrap() {
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
   app.useStaticAssets(join(__dirname, '..', 'public'));
-  app.setBaseViewsDir(join(__dirname, '..', 'templates'));
+  app.setBaseViewsDir(join(__dirname, '..', 'src/templates'));
   app.setViewEngine('hbs');
   await app.listen(port, () => {
     console.log(`Escuchando en puerto: ${port}`);

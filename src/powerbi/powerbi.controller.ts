@@ -1,6 +1,6 @@
 import { Controller, Get, HttpException, Req, UseGuards } from '@nestjs/common';
 import { PowerbiService } from './services/powerbi.service';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EmbedConfigService } from './services/embed-config.service';
 import { jwtDecode } from 'jwt-decode';
 

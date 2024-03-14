@@ -20,9 +20,9 @@ import { JoiPipeModule, JoiSchemaOptions } from 'nestjs-joi';
 @Module({
   imports: [
     MailerModule.forRoot({
-      transport: 'smtps://user@domain.com:pass@smtp.domain.com',
+      transport: 'smtps://user@example.com:topsecret@smtp.example.com',
       template: {
-        dir: process.cwd() + '/templates/',
+        dir: process.cwd() + '/src/templates/',
         adapter: new HandlebarsAdapter(),
         options: {
           strict: true,
@@ -34,7 +34,10 @@ import { JoiPipeModule, JoiSchemaOptions } from 'nestjs-joi';
       preview: true,
     }),
     ConfigModule.forRoot({
-      envFilePath: `${process.cwd()}/config/env/${process.env.NODE_ENV}.env`,
+      envFilePath:
+        process.env.NODE_ENV === 'development'
+          ? `${process.cwd()}/config/env/development.env`
+          : `${process.cwd()}/config/env/production.env`,
       isGlobal: true,
       load: [configuration],
       validationSchema,

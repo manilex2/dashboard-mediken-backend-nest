@@ -92,5 +92,7 @@ export class UtilsService {
         return 'TenantId must be a Guid object. Please select a workspace you own and fill its Id in config.json.';
       }
     }
+
+    return null;
   }
 }

@@ -3,7 +3,6 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { AfiliadoTitular, Beneficiario, Broker, MedikenUser } from './models';
-import { PasswordsController } from './passwords/passwords.controller';
 
 @Module({
   imports: [
@@ -16,6 +15,6 @@ import { PasswordsController } from './passwords/passwords.controller';
   ],
   providers: [UsersService],
   exports: [UsersService],
-  controllers: [UsersController, PasswordsController],
+  controllers: [UsersController],
 })
 export class UsersModule {}

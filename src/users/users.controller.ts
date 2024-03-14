@@ -8,12 +8,12 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 import { ImgDto } from './dto/img/imgDto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as sharp from 'sharp';
-import { UserDto } from './dto/user/userDTO';
+import { UserDto } from './dto/user/userDto';
 
 @Controller('users')
 export class UsersController {

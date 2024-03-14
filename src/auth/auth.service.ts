@@ -1,13 +1,13 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserDto } from '../users/dto/user/userDTO';
+import { UserDto } from '../users/dto/user/userDto';
 import { InjectModel } from '@nestjs/sequelize';
 import {
   AfiliadoTitular,
   Beneficiario,
   Broker,
   MedikenUser,
-} from 'src/users/models';
+} from '../users/models';
 import * as bcrypt from 'bcrypt';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
@@ -91,9 +91,6 @@ export class AuthService {
               { codigoBrokerComp: data.usuario },
             ],
           },
-          attributes: {
-            exclude: ['dsvcimg'],
-          },
         });
         if (user) {
           let passwordMatch = await this.comparePasswords(
@@ -126,9 +123,6 @@ export class AuthService {
             where: {
               usuario: data.usuario,
             },
-            attributes: {
-              exclude: ['Afiimg'],
-            },
           });
           if (user) {
             let passwordMatch = await this.comparePasswords(
@@ -149,14 +143,11 @@ export class AuthService {
               const contratos = await this.afiliadoTitular.findAll({
                 where: {
                   usuario: data.usuario,
-                  suspendido: {
-                    [Op.not]: 'S',
-                  },
-                  statusCliente: {
-                    [Op.not]: 'E',
-                  },
                 },
-                attributes: [['ClRgcnt', 'contrato']],
+                attributes: [
+                  ['ClRgcnt', 'contrato'],
+                  ['ClRgcnsc', 'secuencial'],
+                ],
               });
               delete user.dataValues.contrato;
               user.dataValues.contratos = [];
@@ -165,12 +156,6 @@ export class AuthService {
                 const benef = await this.beneficiario.findAll({
                   where: {
                     contrato: contrato.contrato,
-                    suspendido: {
-                      [Op.not]: 'S',
-                    },
-                    statusExcluido: {
-                      [Op.not]: 'E',
-                    },
                   },
                   attributes: [
                     ['beveIde', 'id'],
@@ -179,11 +164,11 @@ export class AuthService {
                     ['bevecnt', 'contrato'],
                     ['bevecntsec', 'secuencialContrato'],
                     ['bevebensec', 'secuencialBeneficiario'],
-                    ['beveimg', 'img'],
                   ],
                 });
                 user.dataValues.contratos.push({
                   contrato: contrato.dataValues.contrato,
+                  secuencial: contrato.dataValues.secuencial,
                   beneficiarios: benef,
                 });
               }
@@ -198,9 +183,6 @@ export class AuthService {
             user = await this.beneficiario.findOne({
               where: {
                 usuario: data.usuario,
-              },
-              attributes: {
-                exclude: ['beveimg'],
               },
             });
             if (user) {
@@ -226,6 +208,11 @@ export class AuthService {
                   HttpStatus.FORBIDDEN,
                 );
               }
+            } else {
+              throw new HttpException(
+                'Usuario no autorizado. Verifique usuario y contraseña',
+                HttpStatus.FORBIDDEN,
+              );
             }
           }
         }
@@ -361,7 +348,7 @@ export class AuthService {
 
       const config: Options = {
         service: 'gmail',
-        host: 'smtp.gmail.com',
+        host: 'gmail-smtp-in.l.google.com',
         auth: {
           type: 'OAuth2',
           user: this.configService.get<string>('user'),
@@ -381,15 +368,15 @@ export class AuthService {
           subject: 'SOLICITUD DE RESETEO DE CONTRASEÑA',
           template: 'index',
           context: {
-            email: user.email.trim(),
+            email: user.email.trim() || '',
             urlPwd: this.configService.get<string>('origin_url'),
-            token: user.tokenReset.trim(),
-            usuario: user.usuario.trim(),
+            token: user.tokenReset || '',
+            usuario: user.usuario ? user.usuario.trim() : '',
           },
           attachments: [
             {
               filename: 'mediken.png',
-              path: `${process.cwd()}/assets/mediken.png`,
+              path: `${process.cwd()}/src/assets/mediken.png`,
               cid: 'mediken',
             },
           ],
@@ -646,6 +633,11 @@ export class AuthService {
                   HttpStatus.FORBIDDEN,
                 );
               }
+            } else {
+              throw new HttpException(
+                'Token ya utilizado. Debe reestablecer nuevamente la contraseña dandole a ¿Olvide mi contraseña?',
+                HttpStatus.FORBIDDEN,
+              );
             }
           }
         }
